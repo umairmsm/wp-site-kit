@@ -1,0 +1,6 @@
+node_modules/
+.tmp/
+*.log
+# Owner-only notes (they name private projects): never committed
+MORNING_REPORT.md
+PROGRESS.md

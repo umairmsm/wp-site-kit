@@ -1,0 +1,22 @@
+{
+  "name": "{{SLUG}}",
+  "private": true,
+  "description": "Tests and tooling for the {{SLUG}} WordPress site.",
+  "scripts": {
+    "test": "playwright test",
+    "test:structure": "playwright test tests/structure/",
+    "test:seo": "playwright test tests/seo/",
+    "test:a11y": "playwright test tests/accessibility/",
+    "test:security": "playwright test tests/security/",
+    "test:forms": "playwright test tests/forms/",
+    "test:visual:docker": "docker run --rm --network host --ipc=host -v \"$PWD\":/work -w /work -e BASE_URL -e VISUAL=1 mcr.microsoft.com/playwright:v1.60.0-noble npx playwright test tests/visual/",
+    "test:visual:update": "docker run --rm --network host --ipc=host -v \"$PWD\":/work -w /work -e BASE_URL -e VISUAL=1 mcr.microsoft.com/playwright:v1.60.0-noble npx playwright test tests/visual/ --update-snapshots",
+    "lint:php": "vendor/bin/phpcs",
+    "lint:sh": "shellcheck scripts/*.sh",
+    "scan:secrets": "gitleaks detect --no-banner --redact"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
+    "@playwright/test": "1.60.0"
+  }
+}

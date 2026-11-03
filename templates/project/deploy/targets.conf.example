@@ -1,0 +1,22 @@
+# Deploy targets for scripts/deploy-safe.sh, apply-content-change.sh and check-emoji.sh.
+# Copy to deploy/targets.conf (git ignores it). No secrets here: SSH keys live in
+# ~/.ssh/config under the host alias; the Cloudflare Access token comes from the environment.
+# Paths may start with ~/ (expanded on the server).
+
+MAIN_BRANCH=main
+
+LIVE_SSH_HOST=example-prod
+LIVE_DOCROOT='~/public_html'
+LIVE_URL=https://{{DOMAIN}}
+
+STAGING_SSH_HOST=example-prod
+STAGING_DOCROOT='~/staging.{{DOMAIN}}'
+STAGING_URL=https://staging.{{DOMAIN}}
+
+# Pages the smoke test opens after every deploy (space-separated, each starting with /).
+SMOKE_PATHS="/ /contact/ /offers/"
+
+# Optional: a server command run right after the code swap, for hosts whose PHP OPcache doesn't
+# notice changed files (validate_timestamps=0). Ask the host what clears it, e.g.:
+# POST_SWAP_CMD='cachetool opcache:reset --fcgi=/run/php/php8.3-fpm.sock'
+POST_SWAP_CMD=''

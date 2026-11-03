@@ -1,0 +1,12 @@
+name: {{SLUG}}
+type: wordpress
+docroot: web
+php_version: "{{PHP_VERSION}}"
+webserver_type: nginx-fpm
+database:
+  type: mariadb
+  version: "10.11"
+xdebug_enabled: false
+# WordPress reads this: local never indexes and never mails customers (core module "environment").
+web_environment:
+  - WP_ENVIRONMENT_TYPE=local

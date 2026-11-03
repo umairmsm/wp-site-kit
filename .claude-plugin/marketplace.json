@@ -1,0 +1,16 @@
+{
+  "name": "wp-site-kit",
+  "owner": {
+    "name": "umairmsm",
+    "url": "https://github.com/umairmsm"
+  },
+  "description": "Marketplace for the wp-site-kit plugin.",
+  "plugins": [
+    {
+      "name": "wp-site-kit",
+      "source": "./",
+      "description": "WordPress from an empty folder to production: stage skills, starter project, read-only reviewers.",
+      "category": "development"
+    }
+  ]
+}

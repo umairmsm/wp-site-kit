@@ -1,0 +1,6 @@
+# Never run scripts from uploads: an uploaded .php file must not execute.
+# (Apache. For nginx, see docs/reference/DEPLOY_HARDENING.md.)
+<FilesMatch "\.(?i:php[0-9]?|phtml|phar|pl|py|cgi|sh)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes

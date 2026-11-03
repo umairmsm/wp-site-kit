@@ -1,0 +1,6 @@
+{
+  "{{PREFIX}}_offer/sample-offer": {
+    "{{PREFIX}}_price_from": { "before": "120", "after": "135" },
+    "post_excerpt": { "before": "A half-day walk.", "after": "A half-day guided walk, small groups." }
+  }
+}

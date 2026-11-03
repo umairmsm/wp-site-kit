@@ -1,0 +1,11 @@
+{
+  "name": "wp-site-kit",
+  "version": "0.1.0",
+  "description": "Build a WordPress site from an empty folder to production: stage-by-stage skills, a starter project (core must-use plugin, child theme with skins, Playwright tests, safe deploy and backup scripts) and two read-only reviewers.",
+  "author": {
+    "name": "umairmsm",
+    "url": "https://github.com/umairmsm"
+  },
+  "license": "MIT",
+  "keywords": ["wordpress", "ddev", "playwright", "seo", "deploy", "launch", "skills"]
+}

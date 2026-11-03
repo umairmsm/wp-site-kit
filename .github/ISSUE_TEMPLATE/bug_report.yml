@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in the kit or a generated site does not work.
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Kit version
+      description: From `.wp-site-kit` in your project, or the commit you used.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Scaffolder (bin/wp-site-new)
+        - Core must-use plugin (modules)
+        - Child theme or skin
+        - Scripts (deploy, content change, backup, photos, doctor)
+        - Tests (Playwright, PHPCS, selftest)
+        - Skills or reference docs
+        - Agents
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands, WordPress and PHP versions, host type. Remove any keys, emails or private domains.
+    validations:
+      required: true

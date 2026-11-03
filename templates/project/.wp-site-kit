@@ -1,0 +1,5 @@
+kit=wp-site-kit
+version={{KIT_VERSION}}
+created={{DATE}}
+slug={{SLUG}}
+prefix={{PREFIX}}

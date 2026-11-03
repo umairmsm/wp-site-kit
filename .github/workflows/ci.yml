@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Self-test (scaffold, php -l, shellcheck, JSON/XML, manifest, starter rules)
+        run: bash tests/selftest.sh
+
+  phpcs:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scaffold a sample site
+        run: bin/wp-site-new --name "Acme Tours" --slug acme-tours --prefix acme --domain example.com --dir "$RUNNER_TEMP/acme-tours"
+      - name: PHPCS (WordPress Coding Standards + PHPCompatibilityWP)
+        working-directory: ${{ runner.temp }}/acme-tours
+        run: |
+          composer install --no-interaction --no-progress
+          vendor/bin/phpcs
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,2 @@
+# WP-CLI (inside DDEV: `ddev wp …`) works on the WordPress in web/.
+path: web

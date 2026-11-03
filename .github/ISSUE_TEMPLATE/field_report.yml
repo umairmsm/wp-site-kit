@@ -1,0 +1,28 @@
+name: Field report
+description: You built (or are building) a real site with the kit. Tell us what worked and what didn't.
+labels: ["field-report"]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Kind of site
+      placeholder: e.g. local plumber, tour operator, consultant, 3 languages
+  - type: input
+    id: host
+    attributes:
+      label: Hosting
+      placeholder: e.g. shared cPanel, VPS with nginx, managed WordPress
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked well
+  - type: textarea
+    id: changed
+    attributes:
+      label: What you had to change, add or work around
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What was missing

@@ -1,0 +1,11 @@
+# Copy to config.local.yaml for settings that belong to this machine only (git ignores it).
+#
+# Some DDEV releases have lost the web_environment setting from config.yaml. If
+#   ddev wp eval 'echo wp_get_environment_type();'
+# prints anything but "local", uncomment these two lines and run `ddev restart`:
+# web_environment:
+#   - WP_ENVIRONMENT_TYPE=local
+#
+# Port clash with another local server? Pick free ports:
+# router_http_port: "8080"
+# router_https_port: "8443"

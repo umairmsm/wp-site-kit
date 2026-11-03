@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{SITE_NAME}} — prototype</title>
+  <meta name="description" content="Design prototype for {{SITE_NAME}}. Not the live site.">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="index.html">{{SITE_NAME}}</a>
+      <nav aria-label="Main">
+        <ul class="nav">
+          <li><a href="#offers">Offers</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a class="button button--small" href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container">
+        <h1 class="hero__title">One clear sentence about what you offer</h1>
+        <p class="hero__lead">A second line that tells the visitor why it is worth their time.</p>
+        <p><a class="button" href="#contact">Send an enquiry</a></p>
+      </div>
+    </section>
+
+    <section class="offers" id="offers" aria-labelledby="offers-title">
+      <div class="container">
+        <h2 id="offers-title">What we offer</h2>
+        <div class="offers__grid">
+          <article class="offer-card">
+            <div class="offer-card__media" aria-hidden="true"></div>
+            <h3 class="offer-card__title"><a href="#">First offer</a></h3>
+            <p class="offer-card__excerpt">Two lines on what is included and who it suits.</p>
+            <p class="offer-card__price">Price on request</p>
+          </article>
+          <article class="offer-card">
+            <div class="offer-card__media" aria-hidden="true"></div>
+            <h3 class="offer-card__title"><a href="#">Second offer</a></h3>
+            <p class="offer-card__excerpt">Two lines on what is included and who it suits.</p>
+            <p class="offer-card__price">Price on request</p>
+          </article>
+          <article class="offer-card">
+            <div class="offer-card__media" aria-hidden="true"></div>
+            <h3 class="offer-card__title"><a href="#">Third offer</a></h3>
+            <p class="offer-card__excerpt">Two lines on what is included and who it suits.</p>
+            <p class="offer-card__price">Price on request</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="about">
+      <div class="container">
+        <h2>Why people choose us</h2>
+        <p>Three short reasons, each one something the owner can prove.</p>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="container">
+        <h2>Ask us anything</h2>
+        <p>In WordPress this form comes from the core plugin; here it is only a picture of it.</p>
+        <form class="enquiry-form" onsubmit="return false">
+          <p><label for="name">Your name</label><input id="name" type="text" autocomplete="name"></p>
+          <p><label for="email">Email</label><input id="email" type="email" autocomplete="email"></p>
+          <p><label for="message">Message</label><textarea id="message" rows="5"></textarea></p>
+          <p><label><input type="checkbox"> I agree that you keep my details to answer this enquiry.</label></p>
+          <p><button type="submit">Send enquiry</button></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>{{SITE_NAME}} · <a href="#">Privacy notice</a> · <a href="#">Terms</a></p>
+    </div>
+  </footer>
+</body>
+</html>

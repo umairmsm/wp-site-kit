@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# wp-site-new: create a new WordPress site project from the wp-site-kit starter.
+#
+#   wp-site-new --name "Acme Tours" --slug acme-tours --prefix acme --domain example.com \
+#               --dir ~/sites/acme-tours [--php 8.3] [--git]
+#
+# --slug    lowercase letters, digits, hyphens (DDEV name, folder names, text domains)
+# --prefix  2-12 lowercase letters or digits (functions, options, post types, hooks)
+# --git     also run git init and make the first commit
+set -euo pipefail
+
+KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEMPLATE="$KIT_ROOT/templates/project"
+
+die() { echo "wp-site-new: $*" >&2; exit 1; }
+usage() { sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+name="" slug="" prefix="" domain="" dir="" php="8.3" do_git=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --name|--slug|--prefix|--domain|--dir|--php)
+      [ $# -ge 2 ] || die "$1 needs a value"
+      case "$1" in
+        --name) name="$2" ;;
+        --slug) slug="$2" ;;
+        --prefix) prefix="$2" ;;
+        --domain) domain="$2" ;;
+        --dir) dir="$2" ;;
+        --php) php="$2" ;;
+      esac
+      shift 2 ;;
+    --git) do_git=1; shift ;;
+    -h|--help) usage 0 ;;
+    *) echo "wp-site-new: unknown option: $1" >&2; usage 1 ;;
+  esac
+done
+
+[ -n "$name" ] && [ -n "$slug" ] && [ -n "$prefix" ] && [ -n "$domain" ] && [ -n "$dir" ] || usage 1
+[ -d "$TEMPLATE" ] || die "template missing: $TEMPLATE"
+
+# The name only lands in comments, Markdown and HTML text, but keep it to one plain line.
+# shellcheck disable=SC1003  # '\' is a literal backslash pattern on purpose
+case "$name" in
+  *$'\n'*|*'"'*|*'\'*|*'<'*|*'>'*|*'$'*|*'`'*|*'*/'*|*'{{'*|*'}}'*)
+    die "--name: one line, without quotes, backslashes, < > \$ \` */ or {{ }}" ;;
+esac
+[[ "$slug" =~ ^[a-z][a-z0-9-]{1,38}[a-z0-9]$ ]] || die "--slug: 3-40 chars, lowercase letters, digits and hyphens (e.g. acme-tours)"
+[[ "$prefix" =~ ^[a-z][a-z0-9]{1,11}$ ]] || die "--prefix: 2-12 lowercase letters or digits, starting with a letter (e.g. acme)"
+case "$prefix" in
+  wp|wordpress|astra|rank|rankmath|pll|woo|wc|ddev) die "--prefix '$prefix' clashes with WordPress, a plugin or a tool; pick your own" ;;
+esac
+[[ "$domain" =~ ^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$ ]] || die "--domain: a bare domain like example.com (no https://, no path)"
+[[ "$php" =~ ^8\.[0-9]$ ]] || die "--php: a PHP 8.x version such as 8.3"
+
+if [ -e "$dir" ]; then
+  [ -d "$dir" ] || die "$dir exists and is not a folder"
+  [ -z "$(ls -A "$dir")" ] || die "$dir is not empty; pick a new folder"
+fi
+mkdir -p "$dir"
+dir="$(cd "$dir" && pwd)"
+case "$dir/" in "$KIT_ROOT"/*) die "the new project can't live inside the kit" ;; esac
+
+cp -R "$TEMPLATE/." "$dir/"
+
+# Rename files and folders that carry __SLUG__ (deepest first, so parents keep their path).
+while IFS= read -r -d '' path; do
+  base="$(basename "$path")"
+  mv "$path" "$(dirname "$path")/${base//__SLUG__/$slug}"
+done < <(find "$dir" -depth -name '*__SLUG__*' -print0)
+
+# Replace {{TOKENS}} in file contents. perl reads the values from the environment and inserts them literally.
+WPK_PREFIX_UC="$(printf '%s' "$prefix" | tr '[:lower:]' '[:upper:]')"
+WPK_KIT_VERSION="$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$KIT_ROOT/.claude-plugin/plugin.json" | head -n 1)"
+WPK_DATE="$(date +%F)"
+WPK_YEAR="$(date +%Y)"
+export WPK_NAME="$name" WPK_SLUG="$slug" WPK_PREFIX="$prefix" WPK_DOMAIN="$domain" WPK_PHP="$php"
+export WPK_PREFIX_UC WPK_KIT_VERSION WPK_DATE WPK_YEAR
+# shellcheck disable=SC2016  # the $ENV{...} below is Perl, not shell
+find "$dir" -type f -print0 | xargs -0 perl -pi -e '
+    s/\{\{SITE_NAME\}\}/$ENV{WPK_NAME}/g;
+    s/\{\{SLUG\}\}/$ENV{WPK_SLUG}/g;
+    s/\{\{PREFIX_UC\}\}/$ENV{WPK_PREFIX_UC}/g;
+    s/\{\{PREFIX\}\}/$ENV{WPK_PREFIX}/g;
+    s/\{\{DOMAIN\}\}/$ENV{WPK_DOMAIN}/g;
+    s/\{\{PHP_VERSION\}\}/$ENV{WPK_PHP}/g;
+    s/\{\{DATE\}\}/$ENV{WPK_DATE}/g;
+    s/\{\{YEAR\}\}/$ENV{WPK_YEAR}/g;
+    s/\{\{KIT_VERSION\}\}/$ENV{WPK_KIT_VERSION}/g;'
+
+# One rules file for every agent.
+ln -s AGENTS.md "$dir/CLAUDE.md"
+ln -s AGENTS.md "$dir/GEMINI.md"
+if [ -d "$dir/scripts" ]; then
+  find "$dir/scripts" -type f -name '*.sh' -exec chmod +x {} +
+fi
+
+if grep -rIn -e '{{[A-Z_]*}}' -e '__SLUG__' "$dir" >&2; then
+  die "placeholders left behind (listed above); the template needs fixing"
+fi
+if [ -n "$(find "$dir" -name '*__SLUG__*' -print -quit)" ]; then
+  die "a file or folder name still contains __SLUG__"
+fi
+
+if [ "$do_git" = 1 ]; then
+  git -C "$dir" init -q -b main
+  git -C "$dir" add -A
+  git -C "$dir" commit -q -m "chore: start $slug from wp-site-kit" \
+    || die "git commit failed (is git user.name / user.email set?)"
+fi
+
+cat <<EOF
+Created $dir
+
+Next:
+  1. Read $dir/AGENTS.md and SITE_STATUS.md
+  2. Fill docs/BRIEF.md with the owner (skill: wp-kickoff)
+  3. First local run: README.md, "First run"
+EOF

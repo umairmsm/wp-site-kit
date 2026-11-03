@@ -1,0 +1,36 @@
+# Node and test output
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+
+# PHP tools
+vendor/
+
+# Secrets and data: never commit (dumps and backups hold customer data)
+.env
+.env.*
+*.sql
+*.sql.gz
+backups/
+_private/
+deploy/targets.conf
+
+# Machine-only DDEV overrides and script scratch space
+wordpress/*/.ddev/config.local.yaml
+wordpress/*/.content-change-tmp/
+
+# WordPress: track only our own code
+/wordpress/*/web/*
+!/wordpress/*/web/wp-content/
+/wordpress/*/web/wp-content/*
+!/wordpress/*/web/wp-content/mu-plugins/
+!/wordpress/*/web/wp-content/themes/
+/wordpress/*/web/wp-content/themes/*
+!/wordpress/*/web/wp-content/themes/{{SLUG}}-child/
+!/wordpress/*/web/wp-content/uploads/
+/wordpress/*/web/wp-content/uploads/*
+!/wordpress/*/web/wp-content/uploads/.htaccess
+
+# Local runtime for agent loops
+.supervision/
