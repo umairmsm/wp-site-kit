@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -n "$TARGET" ] && [ -n "$DEST" ] || die "usage: $0 <commit> --target staging|live [--dry-run] [--assume-live <commit>]"
+{ [ -n "$TARGET" ] && [ -n "$DEST" ]; } || die "usage: $0 <commit> --target staging|live [--dry-run] [--assume-live <commit>]"
 
 cd "$(git rev-parse --show-toplevel)"
 [ -f deploy/targets.conf ] || die "deploy/targets.conf missing (copy deploy/targets.conf.example and fill it)"
@@ -57,7 +57,7 @@ case "$DEST" in
            fi ;;
   *) die "--target must be staging or live" ;;
 esac
-[ -n "$HOST" ] && [ -n "$DOCROOT" ] && [ -n "$SITE" ] || die "deploy/targets.conf has no complete $DEST block"
+{ [ -n "$HOST" ] && [ -n "$DOCROOT" ] && [ -n "$SITE" ]; } || die "deploy/targets.conf has no complete $DEST block"
 [ -t 0 ] || die "run this yourself in a terminal (a human must confirm)"
 
 WPC_REMOTE="$DOCROOT/wp-content"

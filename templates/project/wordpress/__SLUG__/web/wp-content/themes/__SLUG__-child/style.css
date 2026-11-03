@@ -1,0 +1,10 @@
+/*
+Theme Name: {{SITE_NAME}} Child
+Template: astra
+Description: Layout for {{SITE_NAME}}. Logic lives in the {{SLUG}}-core must-use plugin; the look lives in skins/.
+Version: 0.1.0
+Requires PHP: 8.1
+Text Domain: {{SLUG}}-child
+*/
+
+/* Keep this file empty: styles live in skins/<skin>/tokens.css and skins/<skin>/skin.css. */

@@ -109,6 +109,10 @@ if [ "$modules_required" = "$modules_on_disk" ]; then pass "every module loaded"
 
 echo "== manifest"
 if git -C "$KIT" rev-parse --git-dir >/dev/null 2>&1; then
+  # The starter's own .gitignore applies inside the kit too; a template file it hides would never ship.
+  if git -C "$KIT" ls-files --others --ignored --exclude-standard -- templates | grep . >"$TMP/ignored"; then
+    fail "template files hidden by a .gitignore (add them with git add -f):"; sed 's/^/      /' "$TMP/ignored" | head -10
+  else pass "no template file is git-ignored"; fi
   if diff <(git -C "$KIT" ls-files | sort) <(grep -vE '^(#|$)' "$KIT/MANIFEST.txt" | sort) >"$TMP/manifest"; then
     pass "MANIFEST.txt lists exactly the tracked files"
   else fail "MANIFEST.txt differs from git ls-files (< tracked only, > manifest only):"; sed 's/^/      /' "$TMP/manifest" | head -20; fi

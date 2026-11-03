@@ -49,7 +49,7 @@ setsid npx -y "$PG_CLI" server --port="$PORT" --php=8.3 --blueprint="$TMP/bluepr
   --mount="$WPC/themes/acme-tours-child:/wordpress/wp-content/themes/acme-tours-child" \
   >"$TMP/server.log" 2>&1 &
 PG=$!
-# shellcheck disable=SC2329  # called by the EXIT trap
+# shellcheck disable=SC2317,SC2329  # called by the EXIT trap (SC2317 on older shellcheck)
 cleanup() {
   kill -TERM -- "-$PG" 2>/dev/null || kill "$PG" 2>/dev/null || true
   # Belt and braces: stop any Playground process still serving THIS blueprint (never anything else).

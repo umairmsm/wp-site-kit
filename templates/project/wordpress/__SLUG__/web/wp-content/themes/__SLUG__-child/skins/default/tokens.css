@@ -1,0 +1,50 @@
+/*
+ * Design tokens for the "default" skin. Components in skin.css use only these variables,
+ * so a new skin starts by copying this file and changing values, not selectors.
+ * Keep the same names in static/css/tokens.css (the prototype) so the port is a copy.
+ */
+
+/*
+ * Self-hosted fonts (no Google Fonts calls). Put .woff2 files in assets/fonts/ and
+ * name the first-screen ones *-preload.woff2 so functions.php preloads them.
+ *
+ * @font-face {
+ *   font-family: "Brand Sans";
+ *   src: url("../../assets/fonts/brand-sans-400-preload.woff2") format("woff2");
+ *   font-weight: 400;
+ *   font-style: normal;
+ *   font-display: swap;
+ * }
+ */
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f6f5f2;
+  --color-text: #1d2430;
+  --color-muted: #5b6472;
+  --color-primary: #1f4e79;
+  --color-primary-contrast: #ffffff;
+  --color-accent: #a4501c; /* 5.1:1 on --color-surface, 5.6:1 on white */
+  --color-border: #d9dce1;
+  --color-focus: #a4501c;
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-body);
+
+  --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.1rem);
+  --step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --step-2: clamp(1.6rem, 1.4rem + 1vw, 2.1rem);
+  --step-3: clamp(2rem, 1.7rem + 1.6vw, 3rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --space-6: 4rem;
+
+  --radius: 10px;
+  --shadow: 0 1px 3px rgb(0 0 0 / 0.08), 0 6px 20px rgb(0 0 0 / 0.06);
+  --content-width: 72rem;
+}

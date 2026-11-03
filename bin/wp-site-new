@@ -35,7 +35,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ -n "$name" ] && [ -n "$slug" ] && [ -n "$prefix" ] && [ -n "$domain" ] && [ -n "$dir" ] || usage 1
+if [ -z "$name" ] || [ -z "$slug" ] || [ -z "$prefix" ] || [ -z "$domain" ] || [ -z "$dir" ]; then usage 1; fi
+if [ "$do_git" = 1 ] && { [ -z "$(git config user.name || true)" ] || [ -z "$(git config user.email || true)" ]; }; then
+  die "--git needs a git identity first: git config --global user.name \"Your Name\"; git config --global user.email you@example.com"
+fi
 [ -d "$TEMPLATE" ] || die "template missing: $TEMPLATE"
 
 # The name only lands in comments, Markdown and HTML text, but keep it to one plain line.
