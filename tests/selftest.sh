@@ -85,8 +85,11 @@ check "theme present" test -f "$SITE/wordpress/acme-tours/web/wp-content/themes/
 check "build queue files present" test -f "$SITE/.supervision/QUEUE" -a -f "$SITE/.supervision/status.conf" -a -f "$SITE/PHONE.md"
 check "loop-status runs on the new project" "$KIT/bin/loop-status" "$SITE"
 check "git: uploads/.htaccess tracked" git -C "$SITE" ls-files --error-unmatch wordpress/acme-tours/web/wp-content/uploads/.htaccess
-check "refuses a non-empty folder" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix ab --domain example.com --dir '$SITE'"
-check "refuses a clashing prefix" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix wp --domain example.com --dir '$TMP/other'"
+check "refuses a non-empty folder" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix abcd --domain example.com --dir '$SITE'"
+check "refuses a clashing prefix" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix astra --domain example.com --dir '$TMP/other'"
+# WPCS PrefixAllGlobals rejects prefixes shorter than 4 characters (ShortPrefixPassed is an error).
+check "refuses a 3-character prefix" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix abc --domain example.com --dir '$TMP/short'"
+check "accepts a 4-character prefix" bash -c "'$KIT/bin/wp-site-new' --name X --slug abcd --prefix abcd --domain example.com --dir '$TMP/four' >/dev/null"
 
 echo "== generated project"
 php_fail=0

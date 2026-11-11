@@ -5,7 +5,7 @@
 #               --dir ~/sites/acme-tours [--php 8.3] [--git]
 #
 # --slug    lowercase letters, digits, hyphens (DDEV name, folder names, text domains)
-# --prefix  2-12 lowercase letters or digits (functions, options, post types, hooks)
+# --prefix  4-12 lowercase letters or digits (functions, options, post types, hooks; WPCS needs 4+)
 # --git     also run git init and make the first commit
 set -euo pipefail
 
@@ -48,7 +48,7 @@ case "$name" in
     die "--name: one line, without quotes, backslashes, < > \$ \` */ or {{ }}" ;;
 esac
 [[ "$slug" =~ ^[a-z][a-z0-9-]{1,38}[a-z0-9]$ ]] || die "--slug: 3-40 chars, lowercase letters, digits and hyphens (e.g. acme-tours)"
-[[ "$prefix" =~ ^[a-z][a-z0-9]{1,11}$ ]] || die "--prefix: 2-12 lowercase letters or digits, starting with a letter (e.g. acme)"
+[[ "$prefix" =~ ^[a-z][a-z0-9]{3,11}$ ]] || die "--prefix: 4-12 lowercase letters or digits, starting with a letter (e.g. acme); WPCS rejects shorter prefixes"
 case "$prefix" in
   wp|wordpress|astra|rank|rankmath|pll|woo|wc|ddev) die "--prefix '$prefix' clashes with WordPress, a plugin or a tool; pick your own" ;;
 esac
