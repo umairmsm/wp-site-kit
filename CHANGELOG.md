@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- `bin/loop-queue` and `bin/loop-status`: run `.supervision/QUEUE` unattended with agy-loop and show a phone-sized status picture; wait and retry on reviewer outages and usage limits; one runner per project.
+- New projects get `.supervision/QUEUE`, `.supervision/status.conf(.example)` and `PHONE.md`.
+- `tests/loop-dashboard.sh`, run by the self-test.
+
 ## 0.1.0 — 2026-11-03
 First public version.
 - Ten skills: `wp-site` (stage map and hard rules), `wp-kickoff`, `wp-design`, `wp-build`, `wp-content`, `wp-seo`, `wp-quality`, `wp-ship`, `wp-operate`, `wp-task-file`.

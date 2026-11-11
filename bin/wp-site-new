@@ -97,6 +97,11 @@ if [ -d "$dir/scripts" ]; then
   find "$dir/scripts" -type f -name '*.sh' -exec chmod +x {} +
 fi
 
+# The build queue's settings start from the example (loop-queue / loop-status read status.conf).
+if [ -f "$dir/.supervision/status.conf.example" ] && [ ! -e "$dir/.supervision/status.conf" ]; then
+  cp "$dir/.supervision/status.conf.example" "$dir/.supervision/status.conf"
+fi
+
 if grep -rIn -e '{{[A-Z_]*}}' -e '__SLUG__' "$dir" >&2; then
   die "placeholders left behind (listed above); the template needs fixing"
 fi
@@ -118,4 +123,7 @@ Next:
   1. Read $dir/AGENTS.md and SITE_STATUS.md
   2. Fill docs/BRIEF.md with the owner (skill: wp-kickoff)
   3. First local run: README.md, "First run"
+  4. Unattended builds: list task files in .supervision/QUEUE, then
+       cd $dir && tmux new -d -s $slug -c "\$PWD" $KIT_ROOT/bin/loop-queue
+     Phone status: $KIT_ROOT/bin/loop-status $dir   (runbook: PHONE.md)
 EOF

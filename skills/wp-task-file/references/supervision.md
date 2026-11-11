@@ -18,6 +18,13 @@
 - **Tamper check:** the loop records a checksum of the gate and reviewer files. If they change, the loop stops. Re-baselining is a human step, run outside any agent.
 - **Notifications:** a push notification (for example ntfy) on APPROVED, BLOCKED, ESCALATED and DONE. No model polling.
 
+## Running a queue unattended
+- `bin/loop-queue` runs `.supervision/QUEUE` task by task in tmux; `bin/loop-status` is the phone picture (see the kit README and the project's `PHONE.md`).
+- Change the loop's own settings (`loop.conf`, gate files, builder) only while the queue is idle: a running loop keeps its old file list and stops on the new tamper baseline.
+- Give each tmux session a unique name and address it exactly (`tmux attach -t =name`): `-t name` also matches sessions that merely start with it.
+- Run the loop command with stdin from `/dev/null`; a loop that reads stdin swallows the rest of the queue.
+- Usage limits and reviewer outages are waits, not stops; classify only the newest STOP line.
+
 ## Writing good steps
 - One behaviour per step, with its test written first ("see it fail for the right reason").
 - Name the files. "Improve SEO" is not a step; "add canonical per language in `modules/seo.php`, with test `tests/seo/canonical-lang.spec.ts`" is.

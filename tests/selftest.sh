@@ -30,7 +30,9 @@ done
 for agent in "$KIT"/agents/*.md; do
   if sed -n '1,6p' "$agent" | grep -q '^name: ' && sed -n '1,6p' "$agent" | grep -q '^description: '; then pass "agent $(basename "$agent")"; else fail "agent $(basename "$agent") frontmatter"; fi
 done
-check "shellcheck kit scripts" shellcheck "$KIT/bin/wp-site-new" "$KIT/tests/selftest.sh" "$KIT/tests/playground-smoke.sh"
+check "shellcheck kit scripts" shellcheck "$KIT/bin/wp-site-new" "$KIT/bin/loop-queue" "$KIT/tests/selftest.sh" "$KIT/tests/playground-smoke.sh" "$KIT/tests/loop-dashboard.sh"
+# shellcheck disable=SC2016  # Python code, not shell
+check "loop-status parses (python)" python3 -I -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' "$KIT/bin/loop-status"
 
 echo "== scrub (nothing private in what would be published)"
 # Scan the files git tracks (git-ignored owner notes are never published), or the whole folder outside git.
@@ -80,6 +82,8 @@ if grep -rIn -e '{{[A-Z_]*}}' -e '__SLUG__' "$SITE" >/dev/null 2>&1; then fail "
 check "CLAUDE.md links to AGENTS.md" test "$(readlink "$SITE/CLAUDE.md")" = AGENTS.md
 check "core plugin present" test -f "$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/acme-tours-core.php"
 check "theme present" test -f "$SITE/wordpress/acme-tours/web/wp-content/themes/acme-tours-child/style.css"
+check "build queue files present" test -f "$SITE/.supervision/QUEUE" -a -f "$SITE/.supervision/status.conf" -a -f "$SITE/PHONE.md"
+check "loop-status runs on the new project" "$KIT/bin/loop-status" "$SITE"
 check "git: uploads/.htaccess tracked" git -C "$SITE" ls-files --error-unmatch wordpress/acme-tours/web/wp-content/uploads/.htaccess
 check "refuses a non-empty folder" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix ab --domain example.com --dir '$SITE'"
 check "refuses a clashing prefix" bash -c "! '$KIT/bin/wp-site-new' --name X --slug abc --prefix wp --domain example.com --dir '$TMP/other'"
@@ -106,6 +110,9 @@ if grep -rlE 'fonts\.(googleapis|gstatic)\.com' "$THEME" "$SITE/static" --includ
 modules_required="$(grep -oE "modules/[a-z0-9-]+\.php" "$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/acme-tours-core.php" | sort | tr '\n' ' ')"
 modules_on_disk="$(cd "$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core" && find modules -maxdepth 1 -name '*.php' | sort | tr '\n' ' ')"
 if [ "$modules_required" = "$modules_on_disk" ]; then pass "every module loaded"; else fail "modules: required [$modules_required] vs disk [$modules_on_disk]"; fi
+
+echo "== loop dashboard (loop-queue / loop-status)"
+if bash "$KIT/tests/loop-dashboard.sh" >"$TMP/loop" 2>&1; then pass "loop dashboard tests ($(grep -c '^ok' "$TMP/loop") checks)"; else fail "loop dashboard tests:"; grep -v '^ok' "$TMP/loop" | sed 's/^/      /' | head -20; fi
 
 echo "== manifest"
 if git -C "$KIT" rev-parse --git-dir >/dev/null 2>&1; then
