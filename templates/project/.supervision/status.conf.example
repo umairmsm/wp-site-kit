@@ -1,0 +1,19 @@
+# loop-status / loop-queue settings for {{SITE_NAME}}. Copy to status.conf and edit.
+# Plain KEY=VALUE text: read line by line, never executed.
+
+# Header on the phone picture and the push-notification title.
+TITLE={{SITE_NAME}} build
+# How to find a task ID in a task file name, e.g. TASK_{{PREFIX_UC}}01_DOORS.md -> {{PREFIX_UC}}01.
+TASK_ID_REGEX={{PREFIX_UC}}[0-9]+
+# tmux session the queue runs in (used in the "Start:" hint).
+TMUX_SESSION={{SLUG}}
+# What the owner should type when the queue stops.
+STOP_HINT=Ask Claude: “fix the stopped {{SITE_NAME}} task”
+# Optional team board (the `team` CLI): who posts, and to which channel.
+# TEAM_NAME=machine/project
+# TEAM_TARGET=machine/main
+# Optional phone push via ntfy: a file holding the private topic name (keep it out of git).
+# NTFY_TOPIC_FILE=~/.config/agy-guard/ntfy-topic
+
+# One line per task: LABEL.<ID>=Short name|One plain-English sentence a non-developer understands.
+# LABEL.{{PREFIX_UC}}01=Brand + doors|One shop sign, one door per kind of visitor

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# loop-queue: run a project's task files one after another with agy-loop, unattended, and tell
+# the owner (phone push + team board) at every start, finish, wait and stop.
+#
+#   loop-queue [REPO]          run the queue (inside tmux: tmux new -d -s <name> loop-queue REPO)
+#   loop-queue status [REPO]   phone picture (same as loop-status REPO)
+#   loop-queue raw [REPO]      plain text: queue, running loop, last log lines
+#
+# REPO defaults to the git top folder of the current directory. Reads REPO/.supervision/:
+#   QUEUE        task files, one per line, in order (# comments). Re-read before every task,
+#                so tasks appended while the queue runs are picked up.
+#   status.conf  optional plain-text settings (never sourced): TITLE, TEAM_NAME, TEAM_TARGET,
+#                NTFY_TOPIC_FILE, TMUX_SESSION (see status.conf.example)
+# A task counts as finished when loop.log has "all N steps APPROVED on <branch>" for the branch
+# named in the task file ("Branch `x`").
+#
+# Waits instead of stopping when the problem is not the code:
+#   - reviewers unavailable (cascade exhausted): retry every 15 min, 4 times
+#   - Claude usage limit ("You've hit your ... limit"): retry every 30 min, up to 12 h
+# Any other failure stops the queue and sends a high-priority push.
+#
+# Environment (mostly for tests): LOOP_CMD (default agy-loop), LOOP_RETRY_SLEEP (900),
+# LOOP_LIMIT_SLEEP (1800), LOOP_LOCK_SLEEP (60), NTFY_SERVER (https://ntfy.sh)
+set -uo pipefail
+
+mode=run
+case "${1:-}" in status|raw) mode="$1"; shift ;; -h|--help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+if [ -n "${1:-}" ]; then R="$(cd "$1" 2>/dev/null && pwd)" || { echo "loop-queue: no such folder: $1" >&2; exit 2; }
+else R="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; fi
+S="$R/.supervision"; Q="$S/QUEUE"; LOG="$S/loop.log"; QLOG="$S/queue.log"
+
+if [ "$mode" = status ]; then exec "$(dirname "$(readlink -f "$0")")/loop-status" "$R"; fi
+
+# status.conf is read as text, line by line; nothing in it is executed.
+conf() { [ -f "$S/status.conf" ] && sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$S/status.conf" | head -n 1; }
+TITLE="$(conf TITLE)"; TITLE="${TITLE:-$(basename "$R") build}"
+TEAM="$(conf TEAM_NAME)"; TEAM_TARGET="$(conf TEAM_TARGET)"
+TOPIC_FILE="$(conf NTFY_TOPIC_FILE)"; TOPIC_FILE="${TOPIC_FILE:-$HOME/.config/agy-guard/ntfy-topic}"
+TOPIC_FILE="${TOPIC_FILE/#\~/$HOME}"
+topic="$(cat "$TOPIC_FILE" 2>/dev/null || true)"
+LOOP_CMD="${LOOP_CMD:-agy-loop}"
+
+note() { # message [priority]
+  echo "$(date -u '+%F %T') $1" >> "$QLOG"
+  if [ -n "$TEAM" ] && command -v team >/dev/null 2>&1; then
+    if [ -n "$TEAM_TARGET" ]; then TEAM_NAME="$TEAM" team say -t "$TEAM_TARGET" "$1" >/dev/null 2>&1 || true
+    else TEAM_NAME="$TEAM" team say "$1" >/dev/null 2>&1 || true; fi
+  fi
+  if [ -n "$topic" ]; then
+    curl -s -m 8 -H "Title: $TITLE" -H "Priority: ${2:-default}" -d "$1" "${NTFY_SERVER:-https://ntfy.sh}/$topic" >/dev/null 2>&1 || true
+  fi
+}
+# shellcheck disable=SC2016  # backticks are literal Markdown, not command substitution
+branch_of() { grep -oE 'Branch `[^`]+`' "$1" 2>/dev/null | head -1 | sed 's/Branch `\(.*\)`/\1/'; }
+ere_escape() { printf '%s' "$1" | sed 's/[][\.*^$+?(){}|/]/\\&/g'; }
+done_task() { [ -n "$1" ] && grep -qE "all [0-9]+ steps APPROVED on $(ere_escape "$1")\$" "$LOG" 2>/dev/null; }
+queued() { [ -f "$Q" ] && grep -vE '^[[:space:]]*(#|$)' "$Q" | sed 's/[[:space:]]*$//'; }
+
+if [ "$mode" = raw ]; then
+  echo "== queue ($Q)"
+  while read -r t; do
+    b="$(branch_of "$R/$t")"; if done_task "$b"; then s=DONE; else s=todo; fi
+    printf '%-5s %s (%s)\n' "$s" "$(basename "$t")" "${b:-no Branch line}"
+  done < <(queued)
+  # Look for a process holding loop.lock open; never take the lock just to look.
+  lock="$(readlink -f "$S/loop.lock" 2>/dev/null || true)"
+  if [ -n "$lock" ] && [ -e "$lock" ] && [ -n "$(find /proc/[0-9]*/fd -maxdepth 1 -lname "$lock" -print -quit 2>/dev/null)" ]; then echo "== loop running: yes"; else echo "== loop running: no"; fi
+  echo "== last loop lines"; tail -n 6 "$LOG" 2>/dev/null | cut -c1-160
+  echo "== last queue notes"; tail -n 4 "$QLOG" 2>/dev/null
+  exit 0
+fi
+
+cd "$R" || exit 2
+[ -d "$S" ] || { echo "loop-queue: $S does not exist" >&2; exit 2; }
+[ -f "$Q" ] || { echo "loop-queue: $Q does not exist; list task files in it, one per line" >&2; exit 2; }
+exec 8>"$S/queue.lock"
+flock -n 8 || { echo "loop-queue: another loop-queue is already running for $R" >&2; exit 1; }
+
+next_task() { # first queued task not yet APPROVED (re-read every time)
+  local t
+  while read -r t; do
+    [ -f "$t" ] || { echo "MISSING:$t"; return; }
+    done_task "$(branch_of "$t")" || { echo "$t"; return; }
+  done < <(queued)
+}
+
+# Keep (never delete) edits a builder left when a usage limit cut it off mid-step, so the retry can
+# rebuild the step on a clean tree. Returns 0 only when something was stashed.
+stash_partial() {
+  [ -n "$(git -C "$R" status --porcelain --untracked-files=no 2>/dev/null)" ] || return 1
+  git -C "$R" stash push -m "loop-queue: partial work left by a usage limit in $(basename "$1") $(date -u '+%F %T')" >/dev/null 2>&1 || return 1
+  note "Usage limit left unfinished edits in $(basename "$1"); kept them in git stash (git -C $R stash list) and retrying the step"
+}
+retries=0; limit_waits=0
+while :; do
+  while ! flock -n "$S/loop.lock" true; do sleep "${LOOP_LOCK_SLEEP:-60}"; done   # an agy-loop is already running
+  task="$(next_task)"
+  [ -z "$task" ] && break
+  [[ $task == MISSING:* ]] && { note "queue STOPPED: task file ${task#MISSING:} not found" high; exit 1; }
+  branch="$(branch_of "$task")"
+  [ -n "$branch" ] || { note "queue STOPPED: $(basename "$task") has no Branch \`...\` line" high; exit 1; }
+  note "START $(basename "$task") on $branch"
+  "$LOOP_CMD" "$task" < /dev/null >> "$S/queue.out" 2>&1; rc=$?
+  if [ "$rc" -ne 0 ] || ! done_task "$branch"; then
+    # Classify only the newest STOP line: older lines from earlier failures must not decide this one.
+    last_stop="$(tail -n 40 "$LOG" 2>/dev/null | grep -E 'STOP:|ESCALATED' | tail -n 1)"
+    if grep -qiE "hit your .*limit|usage limit|rate limit" <<<"$last_stop" && [ "$limit_waits" -lt 24 ]; then
+      limit_waits=$((limit_waits + 1))
+      [ "$limit_waits" = 1 ] && note "Usage limit reached in $(basename "$task"); waiting and retrying every $(( ${LOOP_LIMIT_SLEEP:-1800} / 60 )) min"
+      sleep "${LOOP_LIMIT_SLEEP:-1800}"
+      stash_partial "$task"; continue
+    fi
+    # A usage limit earlier in this run left half-built edits; agy-loop now refuses the dirty tree.
+    if [ "$limit_waits" -gt 0 ] && grep -q 'working tree has uncommitted changes' <<<"$last_stop" && stash_partial "$task"; then
+      continue
+    fi
+    if grep -qiE 'cascade exhausted|providers in cascade|reviewers? (unavailable|failed)' <<<"$last_stop" && [ "$retries" -lt 4 ]; then
+      retries=$((retries + 1))
+      note "Reviewers unavailable in $(basename "$task"); retrying in $(( ${LOOP_RETRY_SLEEP:-900} / 60 )) min ($retries/4)"
+      sleep "${LOOP_RETRY_SLEEP:-900}"; continue
+    fi
+    note "STOPPED in $(basename "$task") (rc=$rc). Check: loop-queue status $R ; tail -30 $LOG" high
+    exit 1
+  fi
+  retries=0; limit_waits=0
+  note "DONE $(basename "$task"): all steps APPROVED on $branch"
+done
+note "Queue finished: every queued task is APPROVED. Next: owner review, or add tasks to .supervision/QUEUE"

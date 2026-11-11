@@ -341,10 +341,14 @@ add_action( '{{PREFIX}}_purge_old_enquiries', '{{PREFIX}}_purge_old_enquiries' )
 
 /**
  * Schedule the retry and purge jobs once (must-use plugins have no activation hook).
+ * Not during `wp core install`: the options table may not exist yet, and the next request schedules them.
  *
  * @return void
  */
 function {{PREFIX}}_schedule_enquiry_jobs() {
+	if ( wp_installing() ) {
+		return;
+	}
 	if ( ! wp_next_scheduled( '{{PREFIX}}_retry_enquiry_mail' ) ) {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', '{{PREFIX}}_retry_enquiry_mail' );
 	}

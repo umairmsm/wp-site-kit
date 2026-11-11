@@ -94,9 +94,34 @@ cd ~/sites/acme-tours && cat README.md      # "First run": ddev start, WordPress
 
 The full list, with the reason for each, is in `skills/wp-site/SKILL.md`.
 
+## Unattended build queue and phone status
+Builder agents run task files (`docs/supervision/TASK_*.md`) through `agy-loop`, step by step,
+with a gate and a reviewer. Two small tools keep that going for hours without anyone watching and
+show where it stands on a phone:
+
+```bash
+bin/loop-queue  [PROJECT]          # run .supervision/QUEUE task by task (start it in tmux)
+bin/loop-status [PROJECT]          # phone-sized picture: ✅ approved · 🔨 building · ⬜ waiting · 🛑 stopped · ⏳ retrying
+bin/loop-queue raw [PROJECT]       # plain-text details
+```
+
+- **QUEUE** (`.supervision/QUEUE`): task files in order. Finished tasks ("all N steps APPROVED on
+  &lt;branch&gt;" in `loop.log`) are skipped; the file is re-read before every task, so tasks can be appended
+  while it runs.
+- **status.conf** (`.supervision/status.conf`, made from `status.conf.example`): title, task-ID pattern,
+  one plain-English line per task, optional team board and ntfy topic file. Plain text, never executed.
+- **Waits instead of stopping** when the cause is not the code: reviewers unavailable (retry every
+  15 min, 4 times) or a usage limit (retry every 30 min, up to 12 h). Anything else stops the queue with a
+  high-priority push, because a stop needs a person.
+- **One runner per project** (`queue.lock`); status checks the locks without taking them.
+- New projects get `.supervision/QUEUE`, `status.conf` and a phone runbook, `PHONE.md` (one command per
+  line, for SSH apps on a phone). `.supervision/` stays out of git: `agy-loop` stops on a dirty tree, so a
+  tracked QUEUE edited during a build would stop it.
+
 ## Check the kit
 ```bash
-tests/selftest.sh            # scaffold + php -l + shellcheck + JSON/XML + scrub + the starter's own rules
+tests/selftest.sh            # scaffold + php -l + shellcheck + JSON/XML + scrub + the starter's own rules + loop dashboard
+tests/loop-dashboard.sh      # loop-queue / loop-status against a fixture queue and a fake agy-loop
 tests/playground-smoke.sh    # serve the starter in WordPress Playground; check pages, headers, schema, enquiries
 ```
 
