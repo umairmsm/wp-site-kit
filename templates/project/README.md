@@ -12,6 +12,8 @@ ddev wp core install --url='https://{{SLUG}}.ddev.site' --title='{{SITE_NAME}}' 
 ddev wp theme install astra
 ddev wp theme activate {{SLUG}}-child
 ddev wp rewrite structure '/%postname%/' --hard
+ddev wp post create --post_type=page --post_status=publish --post_title='Contact' --post_name=contact \
+  --post_excerpt='DRAFT: how to reach us; replace with the approved text.'   # the form tests open /contact/
 ddev wp eval 'echo wp_get_environment_type();'    # must print: local
 cd ../..
 npm install && npx playwright install chromium

@@ -118,6 +118,9 @@ if [ "$modules_required" = "$modules_on_disk" ]; then pass "every module loaded"
 ENQ="$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/modules/enquiry.php"
 if sed -n '/^function acme_schedule_enquiry_jobs/,/^}/p' "$ENQ" | grep -q 'wp_installing()'; then pass "no cron scheduling during install"; else fail "enquiry jobs are scheduled during wp core install (guard with wp_installing())"; fi
 
+# tests/forms and tests/helpers open /contact/, so the README's first run must create that page.
+if sed -n '/^## First run/,/^## /p' "$SITE/README.md" | grep -q -- '--post_name=contact'; then pass "first run creates the Contact page"; else fail "README first run does not create the /contact/ page the tests open"; fi
+
 echo "== loop dashboard (loop-queue / loop-status)"
 if bash "$KIT/tests/loop-dashboard.sh" >"$TMP/loop" 2>&1; then pass "loop dashboard tests ($(grep -c '^ok' "$TMP/loop") checks)"; else fail "loop dashboard tests:"; grep -v '^ok' "$TMP/loop" | sed 's/^/      /' | head -20; fi
 
