@@ -121,6 +121,11 @@ if sed -n '/^function acme_schedule_enquiry_jobs/,/^}/p' "$ENQ" | grep -q 'wp_in
 # tests/forms and tests/helpers open /contact/, so the README's first run must create that page.
 if sed -n '/^## First run/,/^## /p' "$SITE/README.md" | grep -q -- '--post_name=contact'; then pass "first run creates the Contact page"; else fail "README first run does not create the /contact/ page the tests open"; fi
 
+# The front page's meta description must not depend on the tagline alone: with a short site name the
+# title rule (title + tagline <= 60) and the description rule (>= 50) can't both pass.
+SEO="$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/modules/seo.php"
+if sed -n '/^function acme_fallback_head_tags/,/^}/p' "$SEO" | sed -n '/is_front_page()/,/} elseif/p' | grep -q 'has_excerpt'; then pass "front page description can come from the static front page excerpt"; else fail "front page description comes only from the tagline"; fi
+
 echo "== loop dashboard (loop-queue / loop-status)"
 if bash "$KIT/tests/loop-dashboard.sh" >"$TMP/loop" 2>&1; then pass "loop dashboard tests ($(grep -c '^ok' "$TMP/loop") checks)"; else fail "loop dashboard tests:"; grep -v '^ok' "$TMP/loop" | sed 's/^/      /' | head -20; fi
 

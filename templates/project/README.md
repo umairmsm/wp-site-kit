@@ -14,6 +14,9 @@ ddev wp theme activate {{SLUG}}-child
 ddev wp rewrite structure '/%postname%/' --hard
 ddev wp post create --post_type=page --post_status=publish --post_title='Contact' --post_name=contact \
   --post_excerpt='DRAFT: how to reach us; replace with the approved text.'   # the form tests open /contact/
+# Optional: a static Home page whose excerpt (50-155 characters) becomes the front page's meta description.
+#   ddev wp post create --post_type=page --post_status=publish --post_title='Home' --post_name=home --post_excerpt='DRAFT ...' --porcelain
+#   ddev wp option update show_on_front page && ddev wp option update page_on_front <ID printed above>
 ddev wp eval 'echo wp_get_environment_type();'    # must print: local
 cd ../..
 npm install && npx playwright install chromium
