@@ -114,6 +114,10 @@ modules_required="$(grep -oE "modules/[a-z0-9-]+\.php" "$SITE/wordpress/acme-tou
 modules_on_disk="$(cd "$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core" && find modules -maxdepth 1 -name '*.php' | sort | tr '\n' ' ')"
 if [ "$modules_required" = "$modules_on_disk" ]; then pass "every module loaded"; else fail "modules: required [$modules_required] vs disk [$modules_on_disk]"; fi
 
+# Cron jobs scheduled during `wp core install` hit tables that don't exist yet (DB errors in the install output).
+ENQ="$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/modules/enquiry.php"
+if sed -n '/^function acme_schedule_enquiry_jobs/,/^}/p' "$ENQ" | grep -q 'wp_installing()'; then pass "no cron scheduling during install"; else fail "enquiry jobs are scheduled during wp core install (guard with wp_installing())"; fi
+
 echo "== loop dashboard (loop-queue / loop-status)"
 if bash "$KIT/tests/loop-dashboard.sh" >"$TMP/loop" 2>&1; then pass "loop dashboard tests ($(grep -c '^ok' "$TMP/loop") checks)"; else fail "loop dashboard tests:"; grep -v '^ok' "$TMP/loop" | sed 's/^/      /' | head -20; fi
 
