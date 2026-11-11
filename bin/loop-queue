@@ -84,6 +84,13 @@ next_task() { # first queued task not yet APPROVED (re-read every time)
   done < <(queued)
 }
 
+# Keep (never delete) edits a builder left when a usage limit cut it off mid-step, so the retry can
+# rebuild the step on a clean tree. Returns 0 only when something was stashed.
+stash_partial() {
+  [ -n "$(git -C "$R" status --porcelain --untracked-files=no 2>/dev/null)" ] || return 1
+  git -C "$R" stash push -m "loop-queue: partial work left by a usage limit in $(basename "$1") $(date -u '+%F %T')" >/dev/null 2>&1 || return 1
+  note "Usage limit left unfinished edits in $(basename "$1"); kept them in git stash (git -C $R stash list) and retrying the step"
+}
 retries=0; limit_waits=0
 while :; do
   while ! flock -n "$S/loop.lock" true; do sleep "${LOOP_LOCK_SLEEP:-60}"; done   # an agy-loop is already running
@@ -100,7 +107,12 @@ while :; do
     if grep -qiE "hit your .*limit|usage limit|rate limit" <<<"$last_stop" && [ "$limit_waits" -lt 24 ]; then
       limit_waits=$((limit_waits + 1))
       [ "$limit_waits" = 1 ] && note "Usage limit reached in $(basename "$task"); waiting and retrying every $(( ${LOOP_LIMIT_SLEEP:-1800} / 60 )) min"
-      sleep "${LOOP_LIMIT_SLEEP:-1800}"; continue
+      sleep "${LOOP_LIMIT_SLEEP:-1800}"
+      stash_partial "$task"; continue
+    fi
+    # A usage limit earlier in this run left half-built edits; agy-loop now refuses the dirty tree.
+    if [ "$limit_waits" -gt 0 ] && grep -q 'working tree has uncommitted changes' <<<"$last_stop" && stash_partial "$task"; then
+      continue
     fi
     if grep -qiE 'cascade exhausted|providers in cascade|reviewers? (unavailable|failed)' <<<"$last_stop" && [ "$retries" -lt 4 ]; then
       retries=$((retries + 1))

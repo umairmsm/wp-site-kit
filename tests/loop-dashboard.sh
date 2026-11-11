@@ -111,6 +111,11 @@ case "${plan:-ok}" in
   limit-once)
     if [ -e .supervision/limit-seen ]; then echo "$(stamp) all 2 steps APPROVED on $branch" >> "$log"
     else touch .supervision/limit-seen; echo "$(stamp) STOP: step 1 BLOCKED: You've hit your 5-hour limit · resets 5am (UTC)" >> "$log"; exit 1; fi ;;
+  limit-dirty)
+    # like agy-loop: refuse to start on a dirty tree; first run hits the limit mid-build and leaves edits
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "$(stamp) STOP: working tree has uncommitted changes; commit or stash them first" >> "$log"; exit 1; fi
+    if [ -e .supervision/dirty-seen ]; then echo "$(stamp) all 2 steps APPROVED on $branch" >> "$log"
+    else touch .supervision/dirty-seen; echo half-done >> tracked.txt; echo "$(stamp) STOP: step 1 BLOCKED: You've hit your 5-hour limit · resets 1pm (UTC)" >> "$log"; exit 1; fi ;;
   outage-once)
     if [ -e .supervision/outage-seen ]; then echo "$(stamp) all 2 steps APPROVED on $branch" >> "$log"
     else touch .supervision/outage-seen; echo "$(stamp) STOP: step 2 needs your decision: All automated review models in cascade exhausted or unavailable." >> "$log"; exit 1; fi ;;
@@ -137,6 +142,18 @@ has "finish note" "$(cat "$Q2/.supervision/queue.log")" "Queue finished"
 printf '.supervision/tasks/TASK_Q03.md\n' >> "$Q2/.supervision/QUEUE"
 FAKE_PLAN="feat/q3=outage-once" run_queue >/dev/null 2>&1; rc=$?
 rc_is "reviewer outage: retries, finishes" 0 "$rc"
+# Usage limit hit mid-build leaves uncommitted edits: the retry must stash them (kept, not lost) and go on.
+Q4="$TMP/q4"; mkdir -p "$Q4/.supervision/tasks"
+# shellcheck disable=SC2016  # literal Markdown backticks
+printf 'Branch `feat/q4`   Base `main`\n### Step 1: Q04\n### Step 2: Q04\n' > "$Q4/.supervision/tasks/TASK_Q04.md"
+printf 'NTFY_TOPIC_FILE=/nonexistent/topic\n' > "$Q4/.supervision/status.conf"
+printf '.supervision/tasks/TASK_Q04.md\n' > "$Q4/.supervision/QUEUE"
+: > "$Q4/.supervision/loop.log"
+( cd "$Q4" && git init -q && printf '.supervision/\n' > .gitignore && echo base > tracked.txt && git add . && git -c user.name=t -c user.email=t@t commit -qm init )
+(cd "$Q4" && FAKE_PLAN="feat/q4=limit-dirty" LOOP_CMD="$FAKE" LOOP_RETRY_SLEEP=0 LOOP_LIMIT_SLEEP=0 LOOP_LOCK_SLEEP=0 timeout 30 "$KIT/bin/loop-queue" "$Q4") >/dev/null 2>&1; rc=$?
+rc_is "usage limit with leftover edits: stashes, retries, finishes" 0 "$rc"
+has "leftover edits kept in a stash" "$(git -C "$Q4" stash list)" "loop-queue: partial work"
+
 has "task appended to QUEUE is picked up" "$(cat "$Q2/.supervision/fake-calls")" "TASK_Q03.md"
 has "outage note" "$(cat "$Q2/.supervision/queue.log")" "Reviewers unavailable in TASK_Q03.md; retrying in 0 min (1/4)"
 
