@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-27
 - `bin/loop-queue` and `bin/loop-status`: run `.supervision/QUEUE` unattended with agy-loop and show a phone-sized status picture; wait and retry on reviewer outages and usage limits; one runner per project.
 - New projects get `.supervision/QUEUE`, `.supervision/status.conf(.example)` and `PHONE.md`.
 - `tests/loop-dashboard.sh`, run by the self-test.
+- Fix: `loop-queue` classifies only the STOP line the current run wrote, so a crash is never mistaken for an old usage limit.
+- Starter fixes: prefix must be 4+ characters (WPCS); no enquiry cron jobs during `wp core install`; README first run creates the Contact page; a static front page's excerpt supplies the front-page meta description.
 
 ## 0.1.0 — 2026-11-03
 First public version.
