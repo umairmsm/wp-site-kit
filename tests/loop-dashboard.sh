@@ -116,6 +116,7 @@ case "${plan:-ok}" in
     if [ -n "$(git status --porcelain --untracked-files=no)" ]; then echo "$(stamp) STOP: working tree has uncommitted changes; commit or stash them first" >> "$log"; exit 1; fi
     if [ -e .supervision/dirty-seen ]; then echo "$(stamp) all 2 steps APPROVED on $branch" >> "$log"
     else touch .supervision/dirty-seen; echo half-done >> tracked.txt; echo "$(stamp) STOP: step 1 BLOCKED: You've hit your 5-hour limit · resets 1pm (UTC)" >> "$log"; exit 1; fi ;;
+  crash) echo "crashed before writing a STOP line" >&2; exit 1 ;;
   outage-once)
     if [ -e .supervision/outage-seen ]; then echo "$(stamp) all 2 steps APPROVED on $branch" >> "$log"
     else touch .supervision/outage-seen; echo "$(stamp) STOP: step 2 needs your decision: All automated review models in cascade exhausted or unavailable." >> "$log"; exit 1; fi ;;
@@ -163,6 +164,17 @@ printf '.supervision/tasks/TASK_Q04.md\n' >> "$Q2/.supervision/QUEUE"
 FAKE_PLAN="feat/q4=fail" run_queue >/dev/null 2>&1; rc=$?
 rc_is "real failure stops the queue (exit 1)" 1 "$rc"
 has "stop note" "$(cat "$Q2/.supervision/queue.log")" "STOPPED in TASK_Q04.md (rc=1)"
+
+# A loop that dies without a STOP line must not be classified by an older STOP line (here a usage limit).
+Q5="$TMP/q5"; mkdir -p "$Q5/.supervision/tasks"
+# shellcheck disable=SC2016  # literal Markdown backticks
+printf 'Branch `feat/q5`   Base `main`\n### Step 1: Q05\n' > "$Q5/.supervision/tasks/TASK_Q05.md"
+printf 'NTFY_TOPIC_FILE=/nonexistent/topic\n' > "$Q5/.supervision/status.conf"
+printf '.supervision/tasks/TASK_Q05.md\n' > "$Q5/.supervision/QUEUE"
+echo "2026-11-10 09:00:00 STOP: step 1 BLOCKED: You've hit your 5-hour limit · resets 5am (UTC)" > "$Q5/.supervision/loop.log"
+(cd "$Q5" && FAKE_PLAN="feat/q5=crash" LOOP_CMD="$FAKE" LOOP_RETRY_SLEEP=0 LOOP_LIMIT_SLEEP=0 LOOP_LOCK_SLEEP=0 timeout 30 "$KIT/bin/loop-queue" "$Q5") >/dev/null 2>&1; rc=$?
+rc_is "crash without a STOP line stops the queue (old limit line ignored)" 1 "$rc"
+hasnt "crash is not called a usage limit" "$(cat "$Q5/.supervision/queue.log")" "Usage limit reached"
 
 printf '.supervision/tasks/TASK_MISSING.md\n' > "$Q2/.supervision/QUEUE"
 run_queue >/dev/null 2>&1; rc=$?

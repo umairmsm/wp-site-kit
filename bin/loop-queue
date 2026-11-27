@@ -100,10 +100,12 @@ while :; do
   branch="$(branch_of "$task")"
   [ -n "$branch" ] || { note "queue STOPPED: $(basename "$task") has no Branch \`...\` line" high; exit 1; }
   note "START $(basename "$task") on $branch"
+  log_start=$(( $(stat -c %s "$LOG" 2>/dev/null || echo 0) + 1 ))
   "$LOOP_CMD" "$task" < /dev/null >> "$S/queue.out" 2>&1; rc=$?
   if [ "$rc" -ne 0 ] || ! done_task "$branch"; then
-    # Classify only the newest STOP line: older lines from earlier failures must not decide this one.
-    last_stop="$(tail -n 40 "$LOG" 2>/dev/null | grep -E 'STOP:|ESCALATED' | tail -n 1)"
+    # Classify only a STOP line this run wrote: a run that died without one (crash, lock clash,
+    # bad arguments) must not be decided by an older line, so it falls through to STOPPED.
+    last_stop="$(tail -c +"$log_start" "$LOG" 2>/dev/null | grep -E 'STOP:|ESCALATED' | tail -n 1)"
     if grep -qiE "hit your .*limit|usage limit|rate limit" <<<"$last_stop" && [ "$limit_waits" -lt 24 ]; then
       limit_waits=$((limit_waits + 1))
       [ "$limit_waits" = 1 ] && note "Usage limit reached in $(basename "$task"); waiting and retrying every $(( ${LOOP_LIMIT_SLEEP:-1800} / 60 )) min"
