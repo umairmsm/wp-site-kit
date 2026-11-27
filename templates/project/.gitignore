@@ -32,5 +32,6 @@ wordpress/*/.content-change-tmp/
 /wordpress/*/web/wp-content/uploads/*
 !/wordpress/*/web/wp-content/uploads/.htaccess
 
-# Local runtime for agent loops
+# Local runtime for agent loops (gate, logs, QUEUE, status.conf). Kept out of git on purpose:
+# agy-loop stops on a dirty working tree, so editing a tracked QUEUE while a build runs would stop it.
 .supervision/

@@ -4,6 +4,8 @@
 agents/launch-auditor.md
 AGENTS.md
 agents/wp-rules-reviewer.md
+bin/loop-queue
+bin/loop-status
 bin/wp-site-new
 CHANGELOG.md
 CLAUDE.md
@@ -67,6 +69,7 @@ templates/project/docs/team/BRIDGE.md
 templates/project/.editorconfig
 templates/project/.gitignore
 templates/project/package.json
+templates/project/PHONE.md
 templates/project/phpcs.xml.dist
 templates/project/playwright.config.ts
 templates/project/README.md
@@ -84,6 +87,8 @@ templates/project/static/css/base.css
 templates/project/static/css/tokens.css
 templates/project/static/index.html
 templates/project/static/README.md
+templates/project/.supervision/QUEUE
+templates/project/.supervision/status.conf.example
 templates/project/tests/accessibility/axe.spec.ts
 templates/project/tests/forms/enquiry.spec.ts
 templates/project/tests/helpers/site.ts
@@ -118,5 +123,6 @@ templates/project/wordpress/__SLUG__/web/wp-content/themes/__SLUG__-child/style.
 templates/project/wordpress/__SLUG__/web/wp-content/uploads/.htaccess
 templates/project/wordpress/__SLUG__/wp-cli.yml
 templates/project/.wp-site-kit
+tests/loop-dashboard.sh
 tests/playground-smoke.sh
 tests/selftest.sh

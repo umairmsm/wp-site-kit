@@ -1,0 +1,6 @@
+# Task queue, run in order by loop-queue (one task file per line, relative to the project root).
+# A task is finished when agy-loop logs "all N steps APPROVED on <branch>" for the task's Branch line;
+# finished tasks are skipped. loop-queue re-reads this file before every task, so you can append
+# tasks while it runs. Lines starting with # are ignored.
+#
+# docs/supervision/TASK_{{PREFIX_UC}}01_EXAMPLE.md

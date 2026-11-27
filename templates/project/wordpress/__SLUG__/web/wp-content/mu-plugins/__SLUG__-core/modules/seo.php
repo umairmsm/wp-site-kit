@@ -86,7 +86,10 @@ function {{PREFIX}}_fallback_head_tags() {
 	$text      = '';
 	$canonical = '';
 	if ( is_front_page() ) {
-		$text      = get_bloginfo( 'description' );
+		// A static front page with an excerpt describes itself; otherwise fall back to the tagline.
+		// A short tagline keeps the title rule happy, so the description must not depend on it alone.
+		$front_id  = is_page() ? get_queried_object_id() : 0;
+		$text      = ( $front_id && has_excerpt( $front_id ) ) ? get_the_excerpt( $front_id ) : get_bloginfo( 'description' );
 		$canonical = is_singular() ? '' : home_url( '/' ); // A static front page gets WordPress's own canonical.
 	} elseif ( is_singular() ) {
 		$text = get_the_excerpt( get_queried_object_id() );

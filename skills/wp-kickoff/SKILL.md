@@ -26,7 +26,7 @@ expects. Nothing is designed or built yet.
         --domain example.com --dir ~/sites/acme-tours --git
    ```
    - `slug`: lowercase and hyphens. It names the DDEV project, the folders and the text domains.
-   - `prefix`: 2 to 12 lowercase letters or digits. Every function, option, post type, meta key, hook and nonce starts with `<prefix>_`.
+   - `prefix`: 4 to 12 lowercase letters or digits (WPCS rejects prefixes shorter than 4). Every function, option, post type, meta key, hook and nonce starts with `<prefix>_`.
 5. **Fill `AGENTS.md`:**
    - what the site is;
    - who approves design and customer copy;
