@@ -12,9 +12,10 @@ nobody has to remember how.
 1. **Backups.**
    - Run `scripts/backup.sh` weekly, and before risky work. It packs the DB, uploads, every git branch and stash, and the Claude memory.
    - Use `--encrypt` before the zip leaves the machine, and keep one copy off it.
-   - Live: the host's daily backups, plus the dumps the deploy and content scripts take.
+   - Live: the host's daily backups, plus the dumps the deploy and content scripts take. **These all sit on the same server or account as the site**, so a hacked or closed account takes them too. Pull a copy of the newest live dump off the server at least weekly, encrypted, and check that it opens.
+   - A backup that can't get its database is not a backup: `backup.sh` stops instead of writing a files-only zip, unless you pass `--files-only` on purpose.
 2. **Write down where everything lives** in the project's `docs/reference/DISASTER_RECOVERY.md`, section 0. Include the photo originals folder: it is not in git.
-3. **Restore drill.** Restore once per quarter onto a spare machine or a fresh DDEV project, time it, and log it in §5. A backup you have never restored is a hope, not a backup.
+3. **Restore drill.** Restore once per quarter onto a spare machine or a fresh DDEV project, time it, and log it in §5. A backup you have never restored is a hope, not a backup. Drill the **live** backup too, not only the local one.
 4. **Credentials:** every secret has a row in `CREDENTIALS_INVENTORY.md` (name, where it lives, who has it, when it was rotated). Rotate anything an agent has seen.
 5. **Routines:** weekly, monthly and yearly checks, the update policy and alerts in `docs/reference/OPERATIONS.md`. Plugin updates go to staging first.
 6. **More than one machine?** Follow `references/multi-machine.md`:

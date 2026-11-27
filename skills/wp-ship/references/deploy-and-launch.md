@@ -26,6 +26,14 @@ What the script does: it builds from `git archive` and lints PHP. It checks for 
 - `scripts/apply-content-change.sh <file> --target staging` is a dry run that reports, per field: will change, already applied, or SKIP (the server has a third value, so someone edited it; it is never overwritten).
 - `--apply` writes. For live, a human types `live`.
 - Backup first: the script takes `wp db export` before writing.
+- **Staging gets every content change the same day as live.** On the source site, staging silently fell behind (13 posts and a legal page no longer matched live), and a later change could only be tested on live. Whenever you apply to live, apply to staging too, and compare the two before trusting a staging test.
+- **Keep a content ledger** (`docs/ops/CONTENT_LEDGER.md`): one row per apply, with the file, target, date, who ran it and the result line. Code has a deployed-commit marker; content needs its own record, or nobody can say which changes are live.
+- **Things built from the content** (search index, chat knowledge, PDFs) are rebuilt after the live apply, never before.
+
+## Verify like a visitor
+- Staging first, verify, then live, then verify again, with the same commit both times.
+- Each time, check the status codes, measure the changed element in a real browser at phone and desktop widths, and check that hidden languages still answer 302.
+- The smoke test (`SMOKE_PATHS`) opens the home and contact page of **every public language**. Add them in the same PR that makes a language public.
 
 ## Cutover (replacing a live site)
 Write `docs/CUTOVER.md` with these headings, and have the owner approve it:
@@ -39,6 +47,14 @@ Write `docs/CUTOVER.md` with these headings, and have the owner approve it:
 5. **The moment:** deploy code to live, apply content, flush caches, run launch-auditor, send a real enquiry, make a real test booking if there is a payment flow, then refund it.
 6. **Rollback:** the exact steps and who runs them: DNS back, or `deploy-safe` from the previous commit, or restore the backup. Keep the old site's files and DB for at least 14 days.
 7. **People:** tell the business owner the time window. Somebody watches the inbox that day.
+
+## Hosting gotchas
+- **WordPress stores the table prefix inside the data** (`wp_capabilities`, `wp_user_roles`). Never rename tables to match an installer's prefix; set `$table_prefix` in `wp-config.php` to the dump's prefix instead.
+- **Some installers write an `.htaccess` without the WordPress block**, so every URL except `/` gives a 404. Add the block, then run `wp rewrite flush --hard` **with plugins loaded** (`--skip-plugins` drops the custom post type rules).
+- **The server's outbound IP is not always the site's IP** (`curl ifconfig.me` showed a NAT address). Test the origin with `curl --resolve <host>:443:<ip>`.
+- **Check that the plan includes AutoSSL before you rely on it.**
+- **The host's bot check may answer non-browser POSTs with a 200 "checking your browser" page**, so a curl test of a form "passes" without sending anything. Test forms in a real browser.
+- **A shared hosting account is one blast radius.** Every site in the same account can read the others' files. An old, unpatched site next door puts the business site at risk. Before launch, list what else lives in the account, and move the business site to its own account (or remove the neighbours) when it starts taking bookings.
 
 ## Origin lock (optional)
 To stop visitors from bypassing Cloudflare and hitting the origin directly:

@@ -25,6 +25,10 @@
 - Run the loop command with stdin from `/dev/null`; a loop that reads stdin swallows the rest of the queue.
 - Usage limits and reviewer outages are waits, not stops; classify only the newest STOP line.
 
+## Steering a running loop
+- Extra text for every builder prompt goes in the loop's config (read when the loop starts).
+- Editing the loop config or the rubric while the loop runs makes it stop cleanly at the next tamper check, right after the builder's commit and before the gate. That is a free checkpoint: re-baseline, fix the state file (re-check a commit, or rebuild with new feedback), then restart.
+
 ## Writing good steps
 - One behaviour per step, with its test written first ("see it fail for the right reason").
 - Name the files. "Improve SEO" is not a step; "add canonical per language in `modules/seo.php`, with test `tests/seo/canonical-lang.spec.ts`" is.
@@ -41,6 +45,17 @@
 | Stale loop state resent old feedback after a machine switch | Reset loop state when switching machines |
 | A renamed test was read as "removed" | Renames need the owner's OK, listed in the commit |
 | The reviewer hung for 10 minutes | Timeouts on reviewers; a hung reviewer is restarted, not waited on |
+| A check was written without its arguments, every route "differed", and the builder re-recorded the committed SEO baseline twice to make it pass | Write every check as an exact command with all arguments. A failing check means fixing the code, never re-capturing its baseline; baselines are protected paths |
+| The loop found no review rubric and the reviewer judged from memory | Every repo that runs a loop has a rubric file; check it is in place before the first start |
+| The reviewer claimed the source text lacked words it had, and told the builder to revert faithful translations | A reviewer quotes the live source page before any claim about it |
+| A new task allowed a word an older test banned; the fix list followed the task and broke the test | When two rules disagree, the stricter existing test wins; never loosen it |
+| A test typed a count ("10 trips"); adding content broke it, and the builder bumped the number | Counts of growing content come from the data, never a typed number |
+| Tests hardcoded the local host; on a second site they all failed | Tests read the origin from `BASE_URL` |
+| Builders left scratch scripts and data files at the repo root | Scratch files go in `/tmp`; exclude patterns in `.git/info/exclude` |
+| The builder hit its quota, then stalled on timeouts; restarts refused the dirty tree | Save its work as a labelled `wip(...)` commit, restart after the reset; if it keeps stalling, the supervisor finishes the step through the same gate and review |
+| After a reboot, a local site reported `production`, and restarting the site mid-gate failed 80 tests | `WP_ENVIRONMENT_TYPE=local` in every local config; never start or restart the local site while a gate runs |
+| The gate ran `npm test` (browser tests only), so the deploy and backup unit tests never ran | The gate's command names every suite, unit tests included |
+| A whole loop was planned for steps that only wrote documents | Docs-only work is done in one direct session; loops are for code with tests |
 
 ## Report template (`docs/supervision/REPORT_<ID>.md`)
 - What changed (per step: commit, summary).

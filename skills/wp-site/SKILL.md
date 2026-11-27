@@ -58,6 +58,10 @@ gate: leave a stage only when its gate is true and the evidence is written down.
 - Branch, local test, diff, then the owner merges. Agents never push, merge, deploy or `ssh` to a server unless the owner asks for that exact action.
 - Every decision goes in `DECISIONS.md` (date, who, why). End each session with a `SESSION_LOG.md` line.
 - "Done" means checked: open the page, run the test, read the server's answer. Never repeat another agent's "resolved" without checking it yourself.
+- Agreeing to a plan is not approval to merge. A merge needs the owner's words for that PR ("merge #12").
+- The owner is often on a phone. Give one command per code block, on one line; pasted multi-line blocks get joined and run nothing. Ask for the output and check it before you say it worked.
+- Lead with the decision, in short, plain replies.
+- One owner per area when several sessions work on a project. Post status (PR numbers, test counts) at the start and end of each step.
 
 ## 6. Helpful skills from other kits (if installed)
 - agent-skills-kit: `wordpress-modern`, `wp-plugin-development`, `wp-wpcli-and-ops`, `wp-performance` for WordPress API detail.
