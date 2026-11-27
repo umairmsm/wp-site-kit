@@ -14,6 +14,8 @@ STAGING_DOCROOT='~/staging.{{DOMAIN}}'
 STAGING_URL=https://staging.{{DOMAIN}}
 
 # Pages the smoke test opens after every deploy (space-separated, each starting with /).
+# When a language goes public, add its home and contact page here in the same PR (e.g. /fr/ /fr/contact/):
+# On the source site the translated homepages had empty tour grids for weeks; no check ever opened them.
 SMOKE_PATHS="/ /contact/ /offers/"
 
 # Optional: a server command run right after the code swap, for hosts whose PHP OPcache doesn't

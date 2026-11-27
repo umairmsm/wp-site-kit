@@ -118,6 +118,14 @@ if [ "$modules_required" = "$modules_on_disk" ]; then pass "every module loaded"
 ENQ="$SITE/wordpress/acme-tours/web/wp-content/mu-plugins/acme-tours-core/modules/enquiry.php"
 if sed -n '/^function acme_schedule_enquiry_jobs/,/^}/p' "$ENQ" | grep -q 'wp_installing()'; then pass "no cron scheduling during install"; else fail "enquiry jobs are scheduled during wp core install (guard with wp_installing())"; fi
 
+# A failed save must not lose the lead: the handler emails it before giving up.
+# shellcheck disable=SC2016  # PHP source matched literally
+if sed -n '/is_wp_error( $id ) || ! $id/,/wp_die(/p' "$ENQ" | grep -q 'wp_mail('; then pass "failed save falls back to email"; else fail "a failed enquiry save is not emailed (the lead would be lost)"; fi
+
+# No database dump means no backup, unless --files-only is passed on purpose.
+BK="$SITE/scripts/backup.sh"
+if grep -q -- '--files-only' "$BK" && sed -n '/^elif command -v ddev/,/^fi/p' "$BK" | grep -q 'exit 1'; then pass "backup stops without a DB dump"; else fail "backup.sh writes a zip without the database"; fi
+
 # tests/forms and tests/helpers open /contact/, so the README's first run must create that page.
 if sed -n '/^## First run/,/^## /p' "$SITE/README.md" | grep -q -- '--post_name=contact'; then pass "first run creates the Contact page"; else fail "README first run does not create the /contact/ page the tests open"; fi
 

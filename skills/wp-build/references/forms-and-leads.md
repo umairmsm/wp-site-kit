@@ -8,7 +8,7 @@ A lead is money. The pipeline in `modules/enquiry.php`, step by step:
 | 2 Rate limit | Per hashed IP per hour: over 5 the lead is **saved but held** (not emailed; flagged in the list); over 30 it is dropped. Private/proxy IPs are not limited. Both numbers are filters | Stops floods without losing real customers behind a shared office or mobile network |
 | 3 Nonce | Verified and **recorded** (`_nonce_ok`), not enforced | A page cache can serve a contact page with an expired nonce; a 403 would lose a real customer |
 | 4 Validate | Name, valid email, consent box; else a 400 page with a back link. The consent sentence and privacy URL shown are stored with the lead | GDPR needs consent, and you must be able to show what the person agreed to |
-| 5 Save | `wp_insert_post` into the private `<prefix>_enquiry` type **before** anything else | If mail or a CRM fails, the lead still exists |
+| 5 Save | `wp_insert_post` into the private `<prefix>_enquiry` type **before** anything else | If mail or a CRM fails, the lead still exists. If the save itself fails, the lead is emailed at once, marked NOT SAVED; the visitor sees an error only when both fail |
 | 6 Hook | `do_action( '<prefix>_enquiry_saved', $id )` | Forward to a CRM or chat app server-side; keys come from `wp-config.php` |
 | 7 Email | `wp_mail` to `<PREFIX>_ENQUIRY_TO` with `Reply-To` the customer; `_mail_sent` recorded | The owner answers by replying |
 | 8 Retry | Hourly cron re-sends where `_mail_sent = 0` (3 tries; held leads are skipped). Admins see a notice while any lead is unsent | Mail servers have bad hours, and nobody reads logs |
