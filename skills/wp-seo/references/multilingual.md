@@ -54,5 +54,17 @@ the language switcher. A parity check proves this after every step.
 ## Polylang gotchas we hit
 - One plugin fatal-errored on activation under WP-CLI. Run plugin switches with `--skip-plugins=<name>` on staging and live, and check WP-CLI output for fatals.
 - An imported page got the slug `contact-2` because `contact` was taken. Check slugs after every import.
-- Menu links fell back to the original language: link helpers must ask for the post in the current language explicitly.
+- Menu links fell back to the original language. Polylang scopes every query to the current language, and `suppress_filters` does not stop it. To find the original page from a translated one, query with `'lang' => ''`, then ask for its translation. A WP-CLI test passed anyway, because CLI has no current language: test link helpers on a rendered translated page.
 - The front page in a translation needs the language home URL (`pll_home_url()`), not `home_url()`.
+
+## Layout across languages
+- **Longer languages break the layout first** (French, Portuguese and German run 20–35% longer than English). In French, the longer menu squeezed the language button, its globe icon shrank to 5 px and the button looked invisible, while the HTML was correct.
+  - Icons and buttons in a flex row get `flex-shrink: 0`.
+  - A compact layout switches at a width that fits the longest language.
+  - Test every public language at several widths, and measure the element (`getBoundingClientRect`); a selector that merely exists proves nothing.
+- **Set the order of things the owner cares about in code** (for example the language order in the switcher), with a test. Don't rely on a plugin's order.
+- **The original language comes first.** If the original text is thin or wrong, fix it there, then translate.
+
+## Strings and pinned counts
+- Tests that pin the number of translatable strings break whenever a string is added or removed. After any `.pot` change, run the i18n tests and update the pins in the same commit, with the reason. Once, 2 new strings broke a pinned count and nobody noticed for 3 days.
+- Regenerating the `.pot` and the `.po` files changes their date headers. Revert changes that touch only those dates, so the diff shows real changes only.

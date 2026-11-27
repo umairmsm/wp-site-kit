@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- Lessons from the source site since 0.1.0, in the skills: claims (written prices, quoting the partner's own words, per-region contacts, rebuilding derived copies after live content), multilingual (Polylang query scoping, layout in longer languages, pinned string counts), test results (colour codes in counts, compare with main, long suites in tmux), deploys (same-day staging content, a content ledger, per-language smoke paths, hosting gotchas, shared-account risk), operations (off-server copies of live backups, live restore drills), supervision (eleven loop failures and their rules, steering a running loop) and working with the owner.
+- Starter: a failed enquiry save emails the lead marked NOT SAVED, and shows an error only if that email fails too.
+- Starter: `scripts/backup.sh` stops when it cannot dump the database; `--files-only` makes a files-only zip on purpose.
+- Starter: `deploy/targets.conf.example` says to add each public language's pages to `SMOKE_PATHS`.
+
 ## 0.2.0 — 2026-11-27
 - `bin/loop-queue` and `bin/loop-status`: run `.supervision/QUEUE` unattended with agy-loop and show a phone-sized status picture; wait and retry on reviewer outages and usage limits; one runner per project.
 - New projects get `.supervision/QUEUE`, `.supervision/status.conf(.example)` and `PHONE.md`.

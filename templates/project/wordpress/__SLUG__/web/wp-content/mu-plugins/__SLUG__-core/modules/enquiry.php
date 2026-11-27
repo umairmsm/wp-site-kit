@@ -215,8 +215,30 @@ function {{PREFIX}}_handle_enquiry() {
 		),
 		true
 	);
-	if ( is_wp_error( $id ) ) {
-		// Never pretend success when the lead is not stored.
+	if ( is_wp_error( $id ) || ! $id ) {
+		// The database refused the lead. Email it now so it is not lost, marked NOT SAVED so the
+		// inbox knows there is no record. Only when the email fails too does the visitor see an error.
+		$fallback = array(
+			/* translators: %s: customer name. */
+			sprintf( __( 'Name: %s', '{{SLUG}}-core' ), $name ),
+			/* translators: %s: customer email. */
+			sprintf( __( 'Email: %s', '{{SLUG}}-core' ), $email ),
+			/* translators: %s: page or offer the visitor came from. */
+			sprintf( __( 'From: %s', '{{SLUG}}-core' ), $context ),
+			/* translators: %s: visitor's language code. */
+			sprintf( __( 'Language: %s', '{{SLUG}}-core' ), $lang ),
+			'',
+			$message,
+			'',
+			__( 'NOT SAVED: the website database refused this enquiry. This email is the only copy.', '{{SLUG}}-core' ),
+		);
+		/* translators: %s: customer name. */
+		$subject = sprintf( __( 'NOT SAVED, new enquiry: %s', '{{SLUG}}-core' ), $name );
+		if ( wp_mail( {{PREFIX}}_enquiry_inbox(), $subject, implode( "\n", $fallback ), array( 'Content-Type: text/plain; charset=UTF-8', 'Reply-To: ' . $email ) ) ) {
+			wp_safe_redirect( $thank_you );
+			exit;
+		}
+		// Never pretend success when the lead is neither stored nor emailed.
 		wp_die(
 			esc_html__( 'Sorry, we could not save your message. Please email us directly.', '{{SLUG}}-core' ),
 			esc_html__( 'Not sent', '{{SLUG}}-core' ),
@@ -246,6 +268,15 @@ add_action( 'admin_post_nopriv_{{PREFIX}}_enquiry', '{{PREFIX}}_handle_enquiry' 
 add_action( 'admin_post_{{PREFIX}}_enquiry', '{{PREFIX}}_handle_enquiry' );
 
 /**
+ * The inbox enquiries go to: {{PREFIX_UC}}_ENQUIRY_TO from wp-config.php, else the admin email.
+ *
+ * @return string Email address.
+ */
+function {{PREFIX}}_enquiry_inbox() {
+	return defined( '{{PREFIX_UC}}_ENQUIRY_TO' ) && is_email( constant( '{{PREFIX_UC}}_ENQUIRY_TO' ) ) ? constant( '{{PREFIX_UC}}_ENQUIRY_TO' ) : get_option( 'admin_email' );
+}
+
+/**
  * Email one stored enquiry to the inbox and record the result.
  *
  * @param int $id Enquiry post ID.
@@ -254,7 +285,7 @@ add_action( 'admin_post_{{PREFIX}}_enquiry', '{{PREFIX}}_handle_enquiry' );
 function {{PREFIX}}_forward_enquiry( $id ) {
 	$name  = (string) get_post_meta( $id, '_{{PREFIX}}_name', true );
 	$email = (string) get_post_meta( $id, '_{{PREFIX}}_email', true );
-	$to    = defined( '{{PREFIX_UC}}_ENQUIRY_TO' ) && is_email( constant( '{{PREFIX_UC}}_ENQUIRY_TO' ) ) ? constant( '{{PREFIX_UC}}_ENQUIRY_TO' ) : get_option( 'admin_email' );
+	$to    = {{PREFIX}}_enquiry_inbox();
 	$lines = array(
 		/* translators: %s: customer name. */
 		sprintf( __( 'Name: %s', '{{SLUG}}-core' ), $name ),

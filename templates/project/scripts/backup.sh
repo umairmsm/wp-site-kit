@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dated full-recovery backup of the LOCAL site: everything needed to rebuild it on a new machine.
 #
-#   scripts/backup.sh [dest-dir] [--encrypt]
+#   scripts/backup.sh [dest-dir] [--encrypt] [--files-only]
 #
 # One zip with:
 #   1. the database (ddev export-db): the DB is the source of truth for content;
@@ -10,16 +10,18 @@
 #   4. a snapshot of the project's Claude memory, if there is one (override with CLAUDE_MEM=).
 # Never inside: secrets (.env, deploy/targets.conf, _private/), other dumps, old backups.
 # The zip holds customer data (enquiries). --encrypt wraps it with gpg (asks for a passphrase).
+# No database dump means no backup: the script stops, unless you pass --files-only on purpose.
 # Keep one copy on another machine or drive. Restore: docs/reference/DISASTER_RECOVERY.md.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAME="$(basename "$ROOT")"
 WP_DIR="$ROOT/wordpress/{{SLUG}}"
-DEST="" ENCRYPT=0
+DEST="" ENCRYPT=0 FILES_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --encrypt) ENCRYPT=1 ;;
+    --files-only) FILES_ONLY=1 ;;
     *) DEST="$arg" ;;
   esac
 done
@@ -33,10 +35,14 @@ mkdir -p "$DR"
 trap 'rm -rf "$DR"' EXIT
 
 echo "1. Database"
-if command -v ddev >/dev/null 2>&1 && (cd "$WP_DIR" && ddev export-db --gzip --file="$DR/db.sql.gz"); then
+if [ "$FILES_ONLY" = 1 ]; then
+  echo "   skipped (--files-only): this zip has NO database"
+elif command -v ddev >/dev/null 2>&1 && (cd "$WP_DIR" && ddev export-db --gzip --file="$DR/db.sql.gz") && [ -s "$DR/db.sql.gz" ]; then
   echo "   ok"
 else
-  echo "   WARN: no database dump (is the DDEV site running?). Files only."
+  echo "STOP: no database dump (is the DDEV site running?). Nothing was written." >&2
+  echo "      Start it (ddev start) and run again, or pass --files-only to back up files without the DB." >&2
+  exit 1
 fi
 
 echo "2. Git: all branches and stashes"
